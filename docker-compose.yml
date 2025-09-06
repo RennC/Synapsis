@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=cognita
+      - POSTGRES_PASSWORD=cognitapass
+      - POSTGRES_DB=cognitapath
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:./cognitapath_backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      -./cognitapath_backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://cognita:cognitapass@db:5432/cognitapath
+      - SECRET_KEY=c0f8e1b2a3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0
+      - GOOGLE_BOOKS_API_KEY=SUA_CHAVE_DE_API_AQUI
+    depends_on:
+      - db
+
+  frontend:
+    build:./cognitapath_frontend
+    volumes:
+      -./cognitapath_frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
